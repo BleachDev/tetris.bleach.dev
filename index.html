@@ -214,7 +214,8 @@
     let moves;
 
     const keyStates = {};
-    const handleKeyUp = e => keyStates[e.key] = null;
+    // Always process keyups so keys don't get glued down when we stop ticking
+    document.addEventListener("keyup", e => keyStates[e.key] = null);
     const handleKeyDown = e => {
         if (!Object.hasOwn(keyStates, e.key) || keyStates[e.key] === null)
             keyStates[e.key] = 0;
@@ -342,7 +343,6 @@
 
     function start() {
         Tone.start();
-        document.addEventListener("keyup", handleKeyUp);
         document.addEventListener("keydown", handleKeyDown);
         document.getElementById("play-toast").style.display = "none";
 
@@ -368,7 +368,6 @@
     }
 
     function stop() {
-        document.removeEventListener("keyup", handleKeyUp);
         document.removeEventListener("keydown", handleKeyDown);
         openToast("play-toast");
 
@@ -376,7 +375,6 @@
     }
 
     function resume() {
-        document.addEventListener("keyup", handleKeyUp);
         document.addEventListener("keydown", handleKeyDown);
         closeToast("play-toast");
 
