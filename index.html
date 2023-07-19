@@ -312,7 +312,7 @@
     }
 
     function closeToast(id) {
-        TOASTS.find(t => id === t.id).style = "none";
+        TOASTS.find(t => id === t.id).style.display = "none";
     }
 
     function getElement(x, y) {
