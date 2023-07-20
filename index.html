@@ -772,7 +772,7 @@
         }
     }
 
-    function summonPiece(counterLines) {
+    function summonPiece(counterLines = 0) {
         const nextPiece = nextPieces.shift();
         moves += "s" + PIECES.indexOf(nextPiece);
         for (let i = 0; i < nextPiece.array.length; i++) {
