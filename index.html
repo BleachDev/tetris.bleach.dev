@@ -381,7 +381,7 @@
             }
         }
 
-        const tickRate = Math.max(65, 450 - (buh * 7));
+        const tickRate = Math.max(65, 450 - (buh * 9));
         if (ticker % tickRate < lastTick % tickRate) {
             tick();
         }
@@ -433,8 +433,12 @@
             const metadataCon = metadataPeer.connect("bl-ttne-" + code);
             metadataCon.on('open', () => {
                 metadataCon.on('data', data => {
-                    document.getElementById("vs-join-text").innerHTML = `<b>${data[2]}</b> invited you to tetris gaming!`;
-                    document.getElementById("vs-join-text-2").innerHTML = "Click Join to start";
+                    if (data.length >= 4) {
+                        document.getElementById("vs-join-button").innerText = "Spectate";
+                    }
+                    document.getElementById("vs-join-text").innerHTML = data.length >= 4 ?
+                        `<b>${data[2]}</b> vs <b>${data[3]}</b>` : `<b>${data[2]}</b> invited you to tetris gaming!`;
+                    document.getElementById("vs-join-text-2").innerHTML = `Click ${data.length >= 4 ? "Spectate" : "Join"} to start`;
                     document.getElementById("vs-join-button").disabled = "";
                     document.getElementById("vs-join-button").onclick = () => {
                         document.getElementById("vs-join-button").disabled = "disabled";
