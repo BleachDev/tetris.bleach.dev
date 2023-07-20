@@ -24,7 +24,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
-    <script src="https://ms.bleach.dev/words.js"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
 </head>
@@ -123,15 +122,15 @@
     <div class="box">
         <h1>Tetris™<br>Totally Normal Edition</h1>
 
-        <button class="menu-button" onclick="openToast('play-toast');">Singleplayer</button>
+        <button class="menu-button" onclick="if (validateUsername()) openToast('play-toast');">Singleplayer</button>
         <br/>
-        <button class="menu-button" onclick="hostGame(getAndSaveUsername('username'));">Versus <span style="font-size: 14px;">(beta™)</span></button>
+        <button class="menu-button" onclick="if (validateUsername()) hostGame(getAndSaveUsername('username'));">Versus <span style="font-size: 14px;">(beta™)</span></button>
         <br/>
         <button class="menu-button" style="font-size: 16px;" onclick="openToast('leaderboard-toast', false);">Leaderboard</button>
         <div class="hr"></div>
 
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username-join">
+        <label for="username" id="username-label">Username</label>
+        <input type="text" id="username" name="username-join" placeholder="Username">
     </div>
 </div>
 
@@ -164,8 +163,8 @@
         <p class="toast-header" id="vs-join-text-2" style="margin: 5px 20px 20px;"></p>
         <div id="vs-username-container">
             <div class="hr"></div>
-            <label for="vs-username">Username</label>
-            <input type="text" id="vs-username" name="username-join">
+            <label for="vs-username" id="vs-username-label">Username</label>
+            <input type="text" id="vs-username" name="username-join" placeholder="Username">
         </div>
         <button class="menu-button" id="vs-join-button" disabled="disabled">Join</button>
         <button class="half-menu-button" onclick="clearVs(); openToast('menu-toast');">Back to Menu</button>
@@ -412,8 +411,7 @@
 
     // Set username
     USERNAMES.forEach(u => document.getElementById(u).value =
-        document.cookie.split("; ").find(row => row.startsWith("username="))?.split("=")[1]
-        ?? words[~~(Math.random() * (words.length - 1))] + (Math.random() > 0.5 ? ~~(Math.random() * 100) : ""));
+        document.cookie.split("; ").find(row => row.startsWith("username="))?.split("=")[1] ?? "");
 
     // Setup Tetris Grid
     for (const element of [ initGrid("tetris", width, height), initGrid("vs-tetris", width, height) ]) {
@@ -449,8 +447,12 @@
                     document.getElementById("vs-join-text-2").innerHTML = `Click ${data.length >= 4 ? "Spectate" : "Join"} to start`;
                     document.getElementById("vs-join-button").disabled = "";
                     document.getElementById("vs-join-button").onclick = () => {
-                        document.getElementById("vs-join-button").disabled = "disabled";
-                        joinGame(code, getAndSaveUsername("vs-username"));
+                        if (!document.getElementById("vs-username").value) {
+                            document.getElementById("vs-username-label").innerHTML = `<span style="color: #ff8d90">Please choose a username!</span>`
+                        } else {
+                            document.getElementById("vs-join-button").disabled = "disabled";
+                            joinGame(code, getAndSaveUsername("vs-username"));
+                        }
                     };
 
                     metadataPeer.destroy();
@@ -856,6 +858,14 @@
         document.cookie = "username=" + name + "; max-age=2592000";
         USERNAMES.forEach(u => document.getElementById(u).value = name);
         return name;
+    }
+
+    function validateUsername() {
+        if (!document.getElementById("username").value) {
+            document.getElementById("username-label").innerHTML = `<span style="color: #ff8d90">Please choose a username!</span>`;
+            return false;
+        }
+        return true;
     }
 
     function formatTime(ms) {
