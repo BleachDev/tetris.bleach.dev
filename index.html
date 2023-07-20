@@ -105,7 +105,7 @@
 
 <div class="bottom-right">
     <p class="corner-text">
-        v1.2.1<br>
+        v1.2.2<br>
         A&nbsp;<a href="https://bleach.dev" class="bleach-link">bleach.dev</a>&nbsp;Game
     </p>
 </div>
@@ -181,11 +181,18 @@
             <button class="leaderboard-button" id="lb-lines" style="text-decoration: underline;"
                     onclick="fetchLeaderboard(`https://api.bleach.dev/tetris/leaderboardlines`);
                         document.getElementById(`lb-lines`).style.textDecoration = `underline`;
-                        document.getElementById(`lb-time`).style.textDecoration = ``;">Most Lines</button>
+                        document.getElementById(`lb-time`).style.textDecoration = ``;
+                        document.getElementById(`lb-vs`).style.textDecoration = ``;">Most Lines</button>
             <button class="leaderboard-button" id="lb-time"
                     onclick="fetchLeaderboard(`https://api.bleach.dev/tetris/leaderboardtime`);
                         document.getElementById(`lb-time`).style.textDecoration = `underline`;
-                        document.getElementById(`lb-lines`).style.textDecoration = ``;">40 Lines</button>
+                        document.getElementById(`lb-lines`).style.textDecoration = ``;
+                        document.getElementById(`lb-vs`).style.textDecoration = ``;">40 Lines</button>
+            <button class="leaderboard-button" id="lb-vs"
+                    onclick="fetchLeaderboard(`https://api.bleach.dev/tetris/leaderboardvs`);
+                        document.getElementById(`lb-time`).style.textDecoration = ``;
+                        document.getElementById(`lb-lines`).style.textDecoration = ``;
+                        document.getElementById(`lb-vs`).style.textDecoration = `underline`;">VS Wins</button>
             <div class="box" id="leaderboard">
                 <div>Loading..</div>
             </div>
@@ -468,13 +475,14 @@
             .then(r => r.json())
             .then(d => {
                 let i = 1;
-                let str = "<div class='leaderboard-left-h'>Rank</div><div class='leaderboard-left-h'>Username</div><div class='leaderboard-right-h'>Lines / Time</div>";
+                let str = "<div class='leaderboard-left-h'>Rank</div><div class='leaderboard-left-h'>Username</div><div class='leaderboard-right-h'>Score</div>";
                 d.forEach(e => {
                     str += "<div class='leaderboard-left'>#" + i
                         + "</div><div class='leaderboard-left'>" + e.username
                         + (url.endsWith("time")
-                            ? "</div><div class='leaderboard-right'>" + formatTime(e.time) + "</div>"
-                            : "</div><div class='leaderboard-right'>" + e.lines + " <span style='color: #999; font-size: 12px;'>" + formatTime(e.time) + "</span></div>");
+                            ? "</div><div class='leaderboard-right'>" + formatTime(e.time) + "</div>" : url.endsWith("vs")
+                            ? "</div><div class='leaderboard-right'>" + e.wins + "</span></div>"
+                                : "</div><div class='leaderboard-right'>" + e.lines + " <span style='color: #999; font-size: 12px;'>" + formatTime(e.time) + "</span></div>");
                     i++;
                 });
                 document.getElementById("leaderboard").innerHTML = str;
@@ -571,7 +579,7 @@
                             document.getElementById("play-button").onclick = resume;
 
                             stop();
-                            fetch(`https://api.bleach.dev/tetris/submittime?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2.1`, {
+                            fetch(`https://api.bleach.dev/tetris/submittime?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2.2`, {
                                 method: 'POST',
                                 body: moves
                             }).then(r => r.ok);
@@ -802,7 +810,7 @@
                     document.getElementById("play-button").innerText = "Restart";
                     document.getElementById("play-button").onclick = start;
 
-                    fetch(`https://api.bleach.dev/tetris/submitlines?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2.1`, {
+                    fetch(`https://api.bleach.dev/tetris/submitlines?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2.2`, {
                         method: 'POST',
                         body: moves
                     }).then(r => r.ok);
@@ -846,6 +854,7 @@
     function getAndSaveUsername(id) {
         const name = document.getElementById(id).value;
         document.cookie = "username=" + name + "; max-age=2592000";
+        USERNAMES.forEach(u => document.getElementById(u).value = name);
         return name;
     }
 
@@ -909,9 +918,7 @@
                         }
                     } else if (data[0] === 254) {
                         for (const cl of clients) {
-                            if (clients.indexOf(cl) !== clIndex) {
-                                cl.send(data);
-                            }
+                            cl.send(data);
                             cl.send([ 253 ]);
                         }
                     } else if (data[0] === 255) {
@@ -998,8 +1005,14 @@
                             }
                         }
                     } else if (data[0] === 254) {
-                        document.getElementById("vs-join-text").innerHTML = `<span style="color: #9cff8d;">You Won after clearing ${clearedLines} line${clearedLines === 1 ? "" : "s"}.</span>`;
-                        document.getElementById("vs-join-button").innerText = "Rematch";
+                        if (data[2] !== yourIndex) {
+                            document.getElementById("vs-join-text").innerHTML = `<span style="color: #9cff8d;">You Won after clearing ${clearedLines} line${clearedLines === 1 ? "" : "s"}.</span>`;
+                            document.getElementById("vs-join-button").innerText = "Rematch";
+                        }
+                        if (yourIndex <= 1) {
+                            fetch(`https://api.bleach.dev/tetris/submitvs?name=${vsPlayers[data[2] ? 0 : 1]}&code=${roomCode}&version=v1.2.2`, {method: 'POST'}).then(r => r.ok);
+                        }
+
                         stop();
                     } else if (data[0] === 255) {
                         vsPlayers = data.slice(2);
