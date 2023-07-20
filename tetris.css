@@ -72,8 +72,13 @@
 }
 
 #timer {
-    margin-top: 0;
+    margin: 0;
     font-size: 22px;
+}
+
+#spectators {
+    color: var(--header-color);
+    font-size: 18px;
 }
 
 /* Toasts */
