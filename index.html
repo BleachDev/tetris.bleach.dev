@@ -493,6 +493,9 @@
         for (let i = 0; i < 5; i++) {
             nextPieces[i] = PIECES[7 * Math.random() | 0];
         }
+        holdingPiece = undefined;
+        initGrid("holding", 1, 1);
+        document.getElementById("holding").innerHTML =`<div class="grid-cell"></div>`;
 
         summonPiece();
         render();
