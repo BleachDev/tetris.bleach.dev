@@ -1,5 +1,5 @@
 .grid {
-    display: grid;
+    display: inline-grid;
     grid-auto-rows: 100%;
     grid-template-columns: repeat(1, 1fr);
     margin: 10px 0;
@@ -15,13 +15,42 @@
 }
 
 .small-grid {
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 75px;
+    width: 100px;
+}
+
+.small-grid > .grid {
     width: 100px;
     height: 100px;
+}
+
+#sp-container {
+    display: inline-block;
+}
+
+#sp-text-container {
+    height: 22px;
 }
 
 #tetris {
     width: 350px;
     height: 770px;
+}
+
+#vs-container {
+    display: none/*inline-block*/;
+    margin-left: 120px;
+}
+
+#vs-tetris {
+    width: 350px;
+    height: 770px;
+}
+
+#vs-text-container {
+    display: none/*block*/;
 }
 
 #progress {
@@ -43,8 +72,8 @@
 }
 
 #timer {
-    margin-top: 20px;
-    font-size: 18px;
+    margin-top: 0;
+    font-size: 22px;
 }
 
 /* Toasts */
@@ -61,7 +90,7 @@
 .toast-header {
     font-size: 20px;
     margin: 6px;
-    color: var(--link-color);
+    color: var(--header-color);
 }
 
 .menu-button {
@@ -75,12 +104,15 @@
     margin: 0;
 }
 
-#leaderboard-button {
-    margin: 10px;
-}
-
 input {
     width: 116px;
+}
+
+#vs-code {
+    background-color: var(--box-color);
+    padding: 7px 10px;
+    border-radius: 4px;
+    margin: 0;
 }
 
 /* Leaderboard */

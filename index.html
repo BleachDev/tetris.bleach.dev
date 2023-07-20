@@ -25,44 +25,78 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
     <script src="https://ms.bleach.dev/words.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
 </head>
 <body>
 
 <div id="game">
-    <div style="display: inline-block; vertical-align: top; margin-top: 75px;">
-        <h2 style="margin: 0;">HOLD</h2>
-        <div id="holding" class="grid small-grid">
-            <div class="grid-cell"></div>
+    <div id="sp-container">
+        <div class="small-grid">
+            <h2 style="margin: 0;">HOLD</h2>
+            <div id="holding" class="grid">
+                <div class="grid-cell"></div>
+            </div>
         </div>
-    </div>
 
-    <div style="display: inline-block;">
         <div id="tetris" class="grid"></div>
+
+        <div class="small-grid">
+            <h2 style="margin: 0;">NEXT</h2>
+            <div id="next-1" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+            <div id="next-2" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+            <div id="next-3" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+            <div id="next-4" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+            <div id="next-5" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+        </div>
     </div>
 
-    <div style="display: inline-block; vertical-align: top; margin-top: 75px;">
-        <h2 style="margin: 0;">NEXT</h2>
-        <div id="next-1" class="grid small-grid">
-            <div class="grid-cell"></div>
-        </div>
-        <div id="next-2" class="grid small-grid">
-            <div class="grid-cell"></div>
-        </div>
-        <div id="next-3" class="grid small-grid">
-            <div class="grid-cell"></div>
-        </div>
-        <div id="next-4" class="grid small-grid">
-            <div class="grid-cell"></div>
-        </div>
-        <div id="next-5" class="grid small-grid">
-            <div class="grid-cell"></div>
+    <div id="vs-container">
+        <div id="vs-tetris" class="grid"></div>
+
+        <div class="small-grid">
+            <h2 style="margin: 0;">NEXT</h2>
+            <div id="next-6" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+            <div id="next-7" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+            <div id="next-8" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+            <div id="next-9" class="grid">
+                <div class="grid-cell"></div>
+            </div>
+            <div id="next-10" class="grid">
+                <div class="grid-cell"></div>
+            </div>
         </div>
     </div>
 
-    <div id="progress">
-        <div id="progressbar"></div>
-        <p id="cleared-text">Lines Cleared: 0</p>
+    <div id="sp-text-container">
+        <div id="progress">
+            <div id="progressbar"></div>
+            <p id="cleared-text">Lines Cleared: 0</p>
+        </div>
+    </div>
+    <div id="vs-text-container">
+        <div style="display: inline-block; margin-right: 120px; width: 350px;">
+            <span id="vs-player-1" style="font-size: 20px;">...</span>
+        </div>
+        <div style="display: inline-block; margin-left: 120px; width: 350px;">
+            <span id="vs-player-2" style="font-size: 20px;">...</span>
+        </div>
     </div>
 
     <p id="timer">00:00.00</p>
@@ -70,7 +104,7 @@
 
 <div class="bottom-right">
     <p class="corner-text">
-        v1.1.5<br>
+        v1.2<br>
         A&nbsp;<a href="https://bleach.dev" class="bleach-link">bleach.dev</a>&nbsp;Game
     </p>
 </div>
@@ -90,7 +124,7 @@
 
         <button class="menu-button" onclick="openToast('play-toast');">Singleplayer</button>
         <br/>
-        <button class="menu-button" style="color: #999;">Versus <span style="font-size: 12px;">(soon™)</span></button>
+        <button class="menu-button" onclick="hostGame(getAndSaveUsername('username'));">Versus <span style="font-size: 14px;">(beta™)</span></button>
         <br/>
         <button class="menu-button" style="font-size: 16px;" onclick="openToast('leaderboard-toast', false);">Leaderboard</button>
         <div class="hr"></div>
@@ -107,6 +141,33 @@
         <p id="play-text">You can continue playing after 40 lines<br/>to get a higher "Most Lines" score!</p>
         <button class="menu-button" id="play-button" onclick="start();">Play</button>
         <button class="half-menu-button" onclick="openToast('menu-toast');">Back to Menu</button>
+        <button class="half-menu-button" onclick="openToast('leaderboard-toast', false);">Leaderboard</button>
+    </div>
+</div>
+
+<div class="toast" id="vs-toast">
+    <div class="box">
+        <h1>1v1 Versus</h1>
+        <button id="vs-copy">📋</button>
+        <span class="toast-header" id="vs-code">code brokey :(</span>
+        <p>Share the url above to start<br/>Waiting for player to join...</p>
+        <button class="half-menu-button" onclick="clearVs(); openToast('menu-toast');">Back to Menu</button>
+        <button class="half-menu-button" onclick="openToast('leaderboard-toast', false);">Leaderboard</button>
+    </div>
+</div>
+
+<div class="toast" id="vs-join-toast">
+    <div class="box">
+        <h1>1v1 Versus</h1>
+        <p class="toast-header" id="vs-join-text" style="margin: 20px 20px 0;">Loading...</p>
+        <p class="toast-header" id="vs-join-text-2" style="margin: 5px 20px 20px;"></p>
+        <div id="vs-username-container">
+            <div class="hr"></div>
+            <label for="vs-username">Username</label>
+            <input type="text" id="vs-username" name="username-join">
+        </div>
+        <button class="menu-button" id="vs-join-button" disabled="disabled">Join</button>
+        <button class="half-menu-button" onclick="clearVs(); openToast('menu-toast');">Back to Menu</button>
         <button class="half-menu-button" onclick="openToast('leaderboard-toast', false);">Leaderboard</button>
     </div>
 </div>
@@ -142,9 +203,11 @@
     }
 
     // Yes, I'm aware these are in fact not toasts, please send further complaints to thisisnotatoast@bleach.dev
-    const TOASTS = [ "menu-toast", "play-toast", "leaderboard-toast"].map(t => document.getElementById(t));
+    const TOASTS = [ "menu-toast", "play-toast", "vs-toast", "vs-join-toast", "leaderboard-toast"].map(t => document.getElementById(t));
+    const USERNAMES = [ "username", "vs-username" ];
     const SYNTH = new Tone.FMSynth().toDestination();
 
+    const DEFAULT_COLORS = ["#3bb88a", "#6f5fc0", "#c06f3e", "#c5ad44", "#bb3e44", "#af4ba6", "#86b43a"];
     const PIECES = [
         new Piece([1, 1, 1, 1], 4), // I
         new Piece([1, 0, 0, 1, 1, 1], 3), // J
@@ -183,35 +246,84 @@
         new Piece([1, 1, 0, 1, 1, 0, 0, 1, 0, 0], 5), // LONG V
         new Piece([0, 1, 0, 0, 0, 0, 1, 0, 1], 3), // 3 CORNERS
         new Piece([1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0], 4), // L++
-        new Piece([0, 0, 1, 0, 0, 0, 1, 0, 0], 4), // DIAGONAL EYES
+        new Piece([0, 0, 1, 0, 0, 0, 1, 0, 0], 3), // DIAGONAL EYES
         new Piece([1, 0, 1, 0, 0, 0, 1, 0, 1], 3), // CORNERS
     ];
-    const DEFAULT_COLORS = ["#3bb88a", "#6f5fc0", "#c06f3e", "#c5ad44", "#bb3e44", "#af4ba6", "#86b43a"];
     for (let i = 0; i < PIECES.length; i++) {
         for (let k = 0; k < PIECES[i].array.length; k++) {
             const v = PIECES[i].array[k];
             PIECES[i].array[k] = v === 0 ? 0 : i < DEFAULT_COLORS.length ? DEFAULT_COLORS[i] : `hsla(${i * 0.17 * 360}, 100%, 70%, 1)`;
         }
     }
+    const BUH_PIECES = [
+        new Piece([0, 1, 0, 1, 1, 1], 3), // T
+        new Piece([1, 0, 1, 0, 1, 0], 3), // V
+        new Piece([1, 1, 1, 1, 0, 0, 1, 0, 0], 3), // L+
+        new Piece([0, 1, 0, 0, 1, 0, 1, 1, 1], 3), // T+
+        new Piece([1, 1, 1, 1, 1, 1, 1, 1, 1], 3), // O-3
+        new Piece([0, 1, 1, 0, 1, 0, 1, 1, 0], 3), // S+
+        new Piece([1, 1, 0, 0, 1, 0, 0, 1, 1], 3), // Z+
+        new Piece([1, 1, 0, 0, 1, 1, 0, 1, 0], 3), // F
+        new Piece([0, 1, 0, 1, 1, 1, 0, 1, 0], 3), // +
+        new Piece([0, 0, 1, 0, 1, 0, 1, 0, 0], 3), // DIAGONAL-3
+        new Piece([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 4), // O-4
+        new Piece([1, 0, 1, 1, 1, 0, 1, 0, 0], 3), // ??
+        new Piece([1, 0, 1, 1, 0, 1, 0, 1, 0], 3), // TALL V
+        new Piece([1, 0, 1, 1, 1, 0, 0, 1, 1], 3), // W WITH DOT
+        new Piece([1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0], 5), // V+
+        new Piece([0, 1, 0, 0, 0, 0, 1, 0, 1], 3), // 3 CORNERS
+        new Piece([0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0], 4), // S++
+        new Piece([0, 1, 0, 1, 0, 1, 0, 1, 0], 3), // DIAMOND
+        new Piece([0, 0, 1, 0, 0, 0, 1, 0, 0], 3), // DIAGONAL EYES
+        new Piece([1, 1, 1, 1, 0, 1, 1, 1, 1], 3), // DONUT
+        new Piece([1, 1, 1, 1, 1, 1, 1], 1), // I-7
+        new Piece([1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1], 5), // ROTATED I-5
+        new Piece(Array(25).fill(1), 5), // O-5
+        new Piece([1, 0, 1, 0, 0, 0, 1, 0, 1], 3), // CORNERS
+        new Piece(Array(36).fill(1), 6), // O-6
+        new Piece(Array(49).fill(1), 7), // O-7
+    ];
+    for (let i = 0; i < BUH_PIECES.length; i++) {
+        for (let k = 0; k < BUH_PIECES[i].array.length; k++) {
+            BUH_PIECES[i].array[k] = BUH_PIECES[i].array[k] === 0 ? 0 : "#cccccc";
+        }
+    }
 
     const height = 22;
     const width = 10;
-    const board = new Array(height * width).fill(0);
-    const fallingBoard = new Array(height * width).fill(0);
+    const boards = [ new Array(height * width).fill(0) ];
+    const fallingBoards = [ new Array(height * width).fill(0) ];
+    const nextPieces = []; // Each board has a pair of 5 pieces
 
     let canHold = true;
     let holdingPiece;
-    const nextPieces = [];
-
     let clearedLines = 0;
-
     let gracePeriod = 0;
+    let buh = 0; // How much buh garbage you have
+    let tempBuh = 0;
 
     let timer = 0;
     let lastTime;
 
     let gameId;
     let moves;
+
+    // 0 >< Board update [0, board[], fallingBoard[], Piece[next1], Piece[next2]..]
+    // 1 >< Send over buh [1, amount]
+    // 252 < Send Line 2 Message [252, "message"]
+    // 253 < Open Rematches [253]
+    //     > Request Rematch [253]
+    //     < Start Rematch [253, 1]
+    // 254 > End Game [254, "messageKey"]
+    //     < Show message [254, "message", losingPlayer]
+    // 255 > Request Game Info [255]
+    //     > Join Game [255, "username"]
+    //     < Game Info [255, yourIndex, "player1", "player2"..]
+    let serverCon;
+    let clients = [];
+    let vsPlayers = [];
+    let yourIndex;
+    let rematches = [];
 
     const keyStates = {};
     // Always process keyups so keys don't get glued down when we stop ticking
@@ -227,14 +339,14 @@
 
             SYNTH.triggerAttackRelease("G4", "256n", Tone.now(), 0.3);
         } else if (e.key === " ") {
-            while (offsetFalling(0, 1)) {}
+            while (offsetFalling(0, 1, 0)) {}
             gracePeriod = 0;
             tick();
 
             SYNTH.triggerAttackRelease("D3", "24n", Tone.now(), 0.2);
         } else if (e.key === "Shift" || e.key.toLowerCase() === "c") {
             holdPiece();
-        } else if (e.key === "Escape") {
+        } else if (e.key === "Escape" && !serverCon) {
             document.getElementById("play-text").innerHTML = `The game is paused.`;
             document.getElementById("play-button").innerText = "Continue";
             document.getElementById("play-button").onclick = resume;
@@ -243,16 +355,21 @@
     };
 
     let ticker = 0;
+    let lastTick = 0;
     let tickId;
     const tickInterval = () => {
-        const leftDown = keyStates["ArrowLeft"] === 0 || (keyStates["ArrowLeft"] >= 200 && keyStates["ArrowLeft"] % 50 === 0);
-        const rightDown = keyStates["ArrowRight"] === 0 || (keyStates["ArrowRight"] >= 200 && keyStates["ArrowRight"] % 50 === 0);
-        const downDown = keyStates["ArrowDown"] === 0 || (keyStates["ArrowDown"] >= 200 && keyStates["ArrowDown"] % 50 === 0);
+        const diff = Math.floor(performance.now() - ticker);
+        lastTick = ticker;
+        ticker += diff;
+
+        const leftDown = keyStates["ArrowLeft"] === 0 || (keyStates["ArrowLeft"] >= 200 && keyStates["ArrowLeft"] % 60 < (keyStates["ArrowLeft"] - diff) % 60);
+        const rightDown = keyStates["ArrowRight"] === 0 || (keyStates["ArrowRight"] >= 200 && keyStates["ArrowRight"] % 60 < (keyStates["ArrowRight"] - diff) % 60);
+        const downDown = keyStates["ArrowDown"] === 0 || (keyStates["ArrowDown"] >= 200 && keyStates["ArrowDown"] % 60 < (keyStates["ArrowDown"] - diff) % 60);
         if (leftDown || rightDown || downDown) {
             if (gracePeriod >= 0)
                 gracePeriod = 1;
 
-            if ((((leftDown || rightDown) && offsetFalling(leftDown ? -1 : 1, 0))) || (downDown && offsetFalling(0, 1))) {
+            if ((((leftDown || rightDown) && offsetFalling(leftDown ? -1 : 1, 0, 0))) || (downDown && offsetFalling(0, 1, 0))) {
                 render();
                 SYNTH.triggerAttackRelease(leftDown || rightDown ? "E#4" : "C#4", "256n", Tone.now(), 0.4);
             }
@@ -260,15 +377,12 @@
 
         for (let key in keyStates) {
             if (keyStates[key] !== null) {
-                keyStates[key] += 10;
+                keyStates[key] += diff;
             }
         }
 
-        if (ticker >= Math.max(50, 350 - (clearedLines * 7))) {
+        if (ticker % Math.max(50, 350 - (buh * 7)) < lastTick % Math.max(50, 350 - (buh * 7))) {
             tick();
-            ticker = 0;
-        } else {
-            ticker += 10;
         }
 
         timer = Math.round(timer + (performance.now() - lastTime));
@@ -288,43 +402,58 @@
     });
 
     // Set username
-    document.getElementById("username").value =
+    USERNAMES.forEach(u => document.getElementById(u).value =
         document.cookie.split("; ").find(row => row.startsWith("username="))?.split("=")[1]
-        ?? words[~~(Math.random() * (words.length - 1))] + (Math.random() > 0.5 ? ~~(Math.random() * 100) : "");
+        ?? words[~~(Math.random() * (words.length - 1))] + (Math.random() > 0.5 ? ~~(Math.random() * 100) : ""));
 
     // Setup Tetris Grid
-    const element = document.getElementById("tetris");
-    element.style.gridTemplateColumns = "repeat(" + width + ", 1fr)";
-    element.style.gridAutoRows = (100 / height) + "%";
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const cellElement = document.createElement('div');
-            cellElement.classList.add(y <= 1 ? "grid-cell-hidden" : 'grid-cell');
-            cellElement.id = "cell-" + x + "-" + y;
-            element.appendChild(cellElement);
+    for (const element of [ initGrid("tetris", width, height), initGrid("vs-tetris", width, height) ]) {
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add(y <= 1 ? "grid-cell-hidden" : 'grid-cell');
+                cellElement.id = element.id + "-" + x + "-" + y;
+                element.appendChild(cellElement);
+            }
         }
     }
 
     fetchLeaderboard("https://api.bleach.dev/tetris/leaderboardlines");
 
-    function openToast(id, closeOthers = true) {
-        TOASTS.forEach(t => t.style.display = id === t.id ? "flex" : closeOthers ? "none" : t.style.display);
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("join")) {
+        const code = urlParams.get("join");
+        openToast("vs-join-toast");
+
+        const metadataPeer = new peerjs.Peer();
+        metadataPeer.on('open', id => {
+            console.log('Client peer ID is: ' + id);
+
+            const metadataCon = metadataPeer.connect("bl-ttne-" + code);
+            metadataCon.on('open', () => {
+                metadataCon.on('data', data => {
+                    document.getElementById("vs-join-text").innerHTML = `<b>${data[2]}</b> invited you to tetris gaming!`;
+                    document.getElementById("vs-join-text-2").innerHTML = "Click Join to start";
+                    document.getElementById("vs-join-button").disabled = "";
+                    document.getElementById("vs-join-button").onclick = () => {
+                        document.getElementById("vs-join-button").disabled = "disabled";
+                        joinGame(code, getAndSaveUsername("vs-username"));
+                    };
+
+                    metadataPeer.destroy();
+                });
+                metadataCon.send([ 255 ]);
+            });
+        });
     }
 
-    function closeToast(id) {
-        TOASTS.find(t => id === t.id).style.display = "none";
-    }
-
-    function getElement(x, y) {
-        return document.getElementById("cell-" + x + "-" + y);
-    }
-
-    function getBoard(x, y) {
-        return (x < 0 || x >= width || y < 0 || y >= height) ? 99 : board[y * width + x];
-    }
-
-    function getFallingBoard(x, y) {
-        return (x < 0 || x >= width || y < 0 || y >= height) ? 99 : fallingBoard[y * width + x];
+    // Tetris code
+    function initGrid(id, width, height) {
+        const element = document.getElementById(id);
+        element.style.gridTemplateColumns = "repeat(" + width + ", 1fr)";
+        element.style.gridAutoRows = (100 / height) + "%";
+        element.innerHTML = "";
+        return element;
     }
 
     function fetchLeaderboard(url) {
@@ -349,14 +478,16 @@
     function start() {
         Tone.start();
         document.addEventListener("keydown", handleKeyDown);
-        document.getElementById("play-toast").style.display = "none";
+        TOASTS.forEach(t => t.style.display = "none");
 
         lastTime = performance.now();
         timer = 0;
         clearedLines = 0;
+        buh = 0;
+        tempBuh = 0;
         updateLinesCleared();
-        board.fill(0);
-        fallingBoard.fill(0)
+        boards.forEach(b => b.fill(0));
+        fallingBoards.forEach(b => b.fill(0));
 
         // Generate random next pieces
         for (let i = 0; i < 5; i++) {
@@ -374,7 +505,7 @@
 
     function stop() {
         document.removeEventListener("keydown", handleKeyDown);
-        openToast("play-toast");
+        openToast(serverCon ? "vs-join-toast" : "play-toast");
 
         clearInterval(tickId);
     }
@@ -388,38 +519,46 @@
     }
 
     function tick() {
-        if (!offsetFalling(0, 1)) {
+        if (!offsetFalling(0, 1, 0)) {
             if (gracePeriod > 0) {
                 gracePeriod = -1;
                 return;
             }
 
-            for (let j = 0; j < fallingBoard.length; j++) {
-                if (fallingBoard[j]) {
-                    board[j] = fallingBoard[j];
+            for (let j = 0; j < fallingBoards[0].length; j++) {
+                if (fallingBoards[0][j]) {
+                    boards[0][j] = fallingBoards[0][j];
                     moves += "c" + j;
                 }
             }
-            fallingBoard.fill(0);
+            fallingBoards[0].fill(0);
 
             // Clear lines
-            for (let line = 0; line < board.length; line += width) {
-                if (board.slice(line, line + width).every(v => v)) {
+            for (let line = 0; line < boards[0].length; line += width) {
+                if (boards[0].slice(line, line + width).every(v => v)) {
                     for (let cell = line + width - 1; cell >= 0; cell--) {
-                        board[cell] = cell < width ? 0 : board[cell - width];
+                        boards[0][cell] = cell < width ? 0 : boards[0][cell - width];
                     }
 
                     clearedLines++;
-                    if (clearedLines === 40) {
-                        document.getElementById("play-text").innerHTML = `<span style="color: #9cff8d;">You cleared 40 lines in ${document.getElementById("timer").innerText}!</span>`;
-                        document.getElementById("play-button").innerText = "Continue";
-                        document.getElementById("play-button").onclick = resume;
-                        stop();
+                    if (serverCon) {
+                        serverCon.send([ 1, 3 + ~~(Math.random() * 13) ]);
+                    } else {
+                        buh++;
+                    }
 
-                        fetch(`https://api.bleach.dev/tetris/submittime?id=${gameId}&name=${getAndSaveUsername()}&lines=${clearedLines}&time=${timer}&version=v1.1.5`, {
-                            method: 'POST',
-                            body: moves
-                        }).then(r => r.ok);
+                    if (clearedLines === 40) {
+                        if (!serverCon) {
+                            document.getElementById("play-text").innerHTML = `<span style="color: #9cff8d;">You cleared 40 lines in ${document.getElementById("timer").innerText}!</span>`;
+                            document.getElementById("play-button").innerText = "Continue";
+                            document.getElementById("play-button").onclick = resume;
+
+                            stop();
+                            fetch(`https://api.bleach.dev/tetris/submittime?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2`, {
+                                method: 'POST',
+                                body: moves
+                            }).then(r => r.ok);
+                        }
                     }
 
                     updateLinesCleared();
@@ -432,6 +571,10 @@
             gracePeriod = 0;
         }
 
+        if (serverCon) {
+            serverCon.send([0, boards[0], fallingBoards[0] ].concat(nextPieces.slice(0, 5)));
+        }
+
         render();
     }
 
@@ -441,54 +584,56 @@
     }
 
     function render() {
-        // Reset board
-        for (let x = 0; x < width; x++) {
-            for (let y = 0; y < height; y++) {
-                getElement(x, y).style.border = null;
+        for (let b = 0; b < boards.length; b++) {
+            // Reset board
+            for (let x = 0; x < width; x++) {
+                for (let y = 0; y < height; y++) {
+                    document.getElementById((b ? "vs-" : "") + "tetris-" + x + "-" + y).style.border = null;
+                }
             }
-        }
 
-        // Ghost rendering
-        for (let i = 1; i <= height; i++) {
-            if (!offsetFalling(0, i, false)) {
-                for (let x = 0; x < width; x++) {
-                    for (let y = 0; y < height; y++) {
-                        if (getFallingBoard(x, y)) {
-                            getElement(x, y + i - 1).style.border = "2px solid " + getFallingBoard(x, y);
+            // Ghost rendering
+            for (let i = 1; i <= height; i++) {
+                if (!offsetFalling(0, i, b, false)) {
+                    for (let x = 0; x < width; x++) {
+                        for (let y = 0; y < height; y++) {
+                            if (getBoard(fallingBoards[b], x, y)) {
+                                document.getElementById((b ? "vs-" : "") + "tetris-" + x + "-" + (y + i - 1)).style.border = "2px solid " + getBoard(fallingBoards[b], x, y);
+                            }
                         }
                     }
+                    break;
                 }
-                break;
             }
-        }
 
-        // Board rendering
-        for (let x = 0; x < width; x++) {
-            for (let y = 0; y < height; y++) {
-                if (getFallingBoard(x, y))
-                    getElement(x, y).style.border = "12px solid " + getFallingBoard(x, y);
+            // Board rendering
+            for (let x = 0; x < width; x++) {
+                for (let y = 0; y < height; y++) {
+                    if (getBoard(fallingBoards[b], x, y))
+                        document.getElementById((b ? "vs-" : "") + "tetris-" + x + "-" + y).style.border = "12px solid " + getBoard(fallingBoards[b], x, y);
 
-                if (getBoard(x, y))
-                    getElement(x, y).style.border = "12px solid " + getBoard(x, y);
+                    if (getBoard(boards[b], x, y))
+                        document.getElementById((b ? "vs-" : "") + "tetris-" + x + "-" + y).style.border = "12px solid " + getBoard(boards[b], x, y);
+                }
             }
         }
     }
 
-    function offsetFalling(offsetX, offsetY, write = true) {
+    function offsetFalling(offsetX, offsetY, index, write = true) {
         for (let x = 0; x < width; x++) {
             for (let y = 0; y < height; y++) {
-                if (getFallingBoard(x, y) && getBoard(x + offsetX, y + offsetY)) {
+                if (getBoard(fallingBoards[index], x, y) && getBoard(boards[index], x + offsetX, y + offsetY)) {
                     return false;
                 }
             }
         }
 
         if (write) {
-            const buffer = fallingBoard.slice();
-            fallingBoard.fill(0);
-            for (let i = 0; i < fallingBoard.length; i++) {
+            const buffer = fallingBoards[index].slice();
+            fallingBoards[index].fill(0);
+            for (let i = 0; i < fallingBoards[index].length; i++) {
                 if (buffer[i]) {
-                    fallingBoard[i + offsetY * width + offsetX] = buffer[i];
+                    fallingBoards[index][i + offsetY * width + offsetX] = buffer[i];
                 }
             }
         }
@@ -540,7 +685,7 @@
     }
 
     function rotateFalling(reverse) {
-        const c = cropBoard(fallingBoard);
+        const c = cropBoard(fallingBoards[0]);
         const newX = c.centerX - (c.centerY - c.minY);
         const newY = c.centerY - (c.centerX - c.minX);
 
@@ -548,19 +693,19 @@
             let found = true;
             for (let x = 0; x <= c.maxX - c.minX; x++) {
                 for (let y = 0; y <= c.maxY - c.minY; y++) {
-                    if (getFallingBoard(c.minX + x, c.minY + y) && getBoard(newX + (c.maxY - c.minY) - y + o[0], newY + x + o[1])) {
+                    if (getBoard(fallingBoards[0], c.minX + x, c.minY + y) && getBoard(boards[0], newX + (c.maxY - c.minY) - y + o[0], newY + x + o[1])) {
                         found = false;
                     }
                 }
             }
 
             if (found) {
-                const buffer = fallingBoard.slice();
-                fallingBoard.fill(0);
+                const buffer = fallingBoards[0].slice();
+                fallingBoards[0].fill(0);
                 for (let x = 0; x <= c.maxX - c.minX; x++) {
                     for (let y = 0; y <= c.maxY - c.minY; y++) {
                         if (buffer[(c.minY + y) * width + c.minX + x]) {
-                            fallingBoard[(newY + (reverse ? (c.maxX - c.minX) - x : x) + o[1]) * width + newX + (reverse ? y : (c.maxY - c.minY) - y) + o[0]] = buffer[(c.minY + y) * width + c.minX + x];
+                            fallingBoards[0][(newY + (reverse ? (c.maxX - c.minX) - x : x) + o[1]) * width + newX + (reverse ? y : (c.maxY - c.minY) - y) + o[0]] = buffer[(c.minY + y) * width + c.minX + x];
                         }
                     }
                 }
@@ -577,15 +722,15 @@
             return;
         }
 
-        const c = cropBoard(fallingBoard);
+        const c = cropBoard(fallingBoards[0]);
 
         putPieceInGrid("holding", c.piece)
 
         // Swap or summon new piece on the board
-        fallingBoard.fill(0);
+        fallingBoards[0].fill(0);
         if (holdingPiece !== undefined) {
             for (let i = 0; i < holdingPiece.array.length; i++) {
-                fallingBoard[Math.floor(i / holdingPiece.width) * width + (i % holdingPiece.width) + 4] = holdingPiece.array[i];
+                fallingBoards[0][Math.floor(i / holdingPiece.width) * width + (i % holdingPiece.width) + 4] = holdingPiece.array[i];
             }
         } else {
             summonPiece();
@@ -605,10 +750,7 @@
         const offsetY = Math.floor((dimensions - piece.height) / 2);
 
         // Create holding grid
-        const element = document.getElementById(elementName);
-        element.style.gridTemplateColumns = "repeat(" + dimensions + ", 1fr)";
-        element.style.gridAutoRows = (100 / dimensions) + "%";
-        element.innerHTML = "";
+        const element = initGrid(elementName, dimensions, dimensions);
         for (let y = 0; y < dimensions; y++) {
             for (let x = 0; x < dimensions; x++) {
                 const cellElement = document.createElement('div');
@@ -616,46 +758,75 @@
                 element.appendChild(cellElement);
 
                 if ((x - offsetX) >= 0 && (x - offsetX) < piece.width && (y - offsetY) >= 0 && (y - offsetY) < piece.height) {
-                    cellElement.style.border = "10px solid " + piece.array[(y - offsetY) * piece.width + (x - offsetX)];
+                    cellElement.style.border = (dimensions > 5 ? 5 : dimensions > 3 ? 8 : 10) + "px solid " + piece.array[(y - offsetY) * piece.width + (x - offsetX)];
                 }
             }
         }
     }
 
     function updateNextPieces() {
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < nextPieces.length; i++) {
             putPieceInGrid("next-" + (i + 1), nextPieces[i]);
         }
     }
 
     function summonPiece() {
-        const piece = nextPieces.shift();
-        moves += "s" + PIECES.indexOf(piece);
-        for (let i = 0; i < piece.array.length; i++) {
-            const boardPos = 5 - Math.floor(piece.width / 2) + Math.floor(i / piece.width) * width + (i % piece.width);
-            if (board[boardPos]) {
-                document.getElementById("play-text").innerHTML = `<span style="color: #ff8d90;">You Lost after clearing ${clearedLines} line${clearedLines === 1 ? "" : "s"}.</span>`;
-                document.getElementById("play-button").innerText = "Restart";
-                document.getElementById("play-button").onclick = start;
+        const nextPiece = nextPieces.shift();
+        moves += "s" + PIECES.indexOf(nextPiece);
+        for (let i = 0; i < nextPiece.array.length; i++) {
+            const boardPos = 5 - Math.floor(nextPiece.width / 2) + Math.floor(i / nextPiece.width) * width + (i % nextPiece.width);
+            if (boards[0][boardPos]) {
+                if (serverCon) {
+                    serverCon.send([ 254, "", yourIndex ]);
+                    document.getElementById("vs-join-text").innerHTML = `<span style="color: #ff8d90;">You Lost after clearing ${clearedLines} line${clearedLines === 1 ? "" : "s"}.</span>`;
+                    document.getElementById("vs-join-button").innerText = "Rematch";
+                } else {
+                    document.getElementById("play-text").innerHTML = `<span style="color: #ff8d90;">You Lost after clearing ${clearedLines} line${clearedLines === 1 ? "" : "s"}.</span>`;
+                    document.getElementById("play-button").innerText = "Restart";
+                    document.getElementById("play-button").onclick = start;
+
+                    fetch(`https://api.bleach.dev/tetris/submitlines?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2`, {
+                        method: 'POST',
+                        body: moves
+                    }).then(r => r.ok);
+                }
+
                 stop();
-
-                fetch(`https://api.bleach.dev/tetris/submitlines?id=${gameId}&name=${getAndSaveUsername()}&lines=${clearedLines}&time=${timer}&version=v1.1.5`, {
-                    method: 'POST',
-                    body: moves
-                }).then(r => r.ok);
-
                 return;
             }
 
-            fallingBoard[boardPos] = piece.array[i];
+            fallingBoards[0][boardPos] = nextPiece.array[i];
         }
 
-        nextPieces.push(PIECES[Math.min(7 + clearedLines, PIECES.length) * Math.random() | 0]);
+        if (tempBuh > 5) {
+            let piece = ~~(Math.random() * Math.min(3 + tempBuh, BUH_PIECES.length));
+            tempBuh = Math.max(tempBuh - piece - 2, 0);
+            nextPieces.splice(4, 0, BUH_PIECES[piece]);
+        } else {
+            tempBuh = 0;
+            nextPieces.splice(4, 0, PIECES[~~(Math.random() * Math.min(7 + buh, PIECES.length))]);
+        }
+
+        if (serverCon)
+            document.getElementById("vs-player-1").innerText = `${vsPlayers[yourIndex]} (Buh: ${buh}+${tempBuh})`;
         updateNextPieces();
     }
 
-    function getAndSaveUsername() {
-        const name = document.getElementById("username").value;
+    function getBoard(brd, x, y) {
+        return (x < 0 || x >= width || y < 0 || y >= height) ? 99 : brd[y * width + x];
+    }
+
+    function openToast(id, closeOthers = true) {
+        TOASTS.forEach(t => t.style.display = id === t.id ? "flex" : closeOthers ? "none" : t.style.display);
+    }
+
+    function closeToast(id) {
+        TOASTS.find(t => id === t.id).style.display = "none";
+    }
+
+    // Misc code
+    function getAndSaveUsername(id) {
+        const name = document.getElementById(id).value;
         document.cookie = "username=" + name + "; max-age=2592000";
         return name;
     }
@@ -665,6 +836,177 @@
         const seconds = Math.floor(ms / 1000) % 60;
         const millis = Math.floor(ms / 10) % 100;
         return (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "." + (millis < 10 ? "0" : "") + millis;
+    }
+
+    // Multiplayer code
+    function hostGame(username) {
+        let roomCode = "";
+        const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        for (let i = 0; i < 4; i++) {
+            roomCode += characters.charAt(~~(Math.random() * characters.length));
+        }
+
+        document.getElementById("vs-code").innerText = "tetris.bleach.dev/?join=" + roomCode;
+        document.getElementById("vs-copy").onclick = () => navigator.clipboard.writeText("https://tetris.bleach.dev/?join=" + roomCode);
+        openToast("vs-toast");
+
+        let clientAcceptor = new peerjs.Peer("bl-ttne-" + roomCode);
+        clientAcceptor.on('open', id => {
+            console.log('Server peer ID is: ' + id);
+
+            clientAcceptor.on('connection', clientCon => {
+                console.log("Client Accepted", clientCon);
+
+                clientCon.on('data', data => {
+                    if (data[0] !== 0)
+                        console.log("Server Received", data);
+
+                    let clIndex = clients.indexOf(clientCon);
+                    if (data[0] === 0) {
+                        for (const cl of clients) {
+                            if (clients.indexOf(cl) !== clIndex) {
+                                cl.send(data);
+                            }
+                        }
+                    } else if (data[0] === 1) {
+                        clients[clIndex ? 0 : 1].send(data);
+                    } else if (data[0] === 253) {
+                        if (!rematches.includes(clIndex)) {
+                            rematches.push(clIndex)
+                            for (const cl of clients) {
+                                cl.send([252, `${rematches.map(i => vsPlayers[i]).join(", ")} Wants a rematch!`]);
+                            }
+
+                            if (rematches.includes(0) && rematches.includes(1)) {
+                                startCountdown();
+                            }
+                        }
+                    } else if (data[0] === 254) {
+                        for (const cl of clients) {
+                            if (clients.indexOf(cl) !== clIndex) {
+                                cl.send(data);
+                            }
+                            cl.send([ 253 ]);
+                        }
+                    } else if (data[0] === 255) {
+                        if (data.length >= 2 && clIndex === -1) {
+                            console.log("Client Added To Game", clientCon);
+                            clIndex = clients.push(clientCon) - 1;
+                            vsPlayers.push(data[1]);
+
+                            for (let i = 0; i < clients.length - 1; i++) {
+                                clients[i].send([ 255, i ].concat(vsPlayers));
+                            }
+
+                            if (vsPlayers.length === 2) {
+                                document.getElementById("vs-join-button").disabled = "disabled";
+                                startCountdown();
+                            }
+                        }
+
+                        clientCon.send([ 255, clIndex ].concat(vsPlayers));
+                    }
+                });
+            });
+        });
+        console.log(clientAcceptor);
+
+        joinGame(roomCode, username);
+    }
+
+    function startCountdown() {
+        let countdown = 3;
+        let countdownFunc = setInterval(() => {
+            if (countdown > 0) {
+                for (const cl of clients) {
+                    cl.send([ 252, countdown + ".." ]);
+                }
+            } else {
+                for (let i = 0; i < clients.length; i++) {
+                    clients[i].send([ 252, "Click Rematch to rematch" ]);
+                    clients[i].send([ 253, 1 ]);
+                }
+                clearInterval(countdownFunc);
+            }
+            countdown--;
+        }, 700);
+    }
+
+    function joinGame(roomCode, username) {
+        const toServerPeer = new peerjs.Peer();
+        toServerPeer.on('open', id => {
+            console.log('Client peer ID is: ' + id);
+
+            serverCon = toServerPeer.connect("bl-ttne-" + roomCode);
+            serverCon.on('open', () => {
+                serverCon.on('data', data => {
+                    if (data[0] !== 0)
+                        console.log("Client Received", data);
+
+                    if (data[0] === 0) {
+                        boards[1] = data[1];
+                        fallingBoards[1] = data[2];
+                        for (let i = 0; i < 5; i++)
+                            nextPieces[5 + i] = data[3 + i];
+
+                        updateNextPieces();
+                        render();
+                    } else if (data[0] === 1) {
+                        buh++;
+                        tempBuh += data[1];
+                        document.getElementById("vs-player-1").innerText = `${vsPlayers[yourIndex]} (Buh: ${buh}+${tempBuh})`;
+                    } else if (data[0] === 252) {
+                        document.getElementById("vs-join-text-2").innerHTML = data[1];
+                        document.getElementById("vs-username-container").style.display = "none";
+                        SYNTH.triggerAttackRelease("A4", "128n", Tone.now(), 0.3);
+                        stop();
+                    } else if (data[0] === 253) {
+                        if (data.length >= 2) {
+                            rematches = [];
+                            start();
+                        } else {
+                            document.getElementById("vs-join-button").disabled = "";
+                            document.getElementById("vs-join-button").onclick = () => {
+                                serverCon.send([ 253 ]);
+                                document.getElementById("vs-join-button").disabled = "disabled";
+                            }
+                        }
+                    } else if (data[0] === 254) {
+                        document.getElementById("vs-join-text").innerHTML = `<span style="color: #9cff8d;">You Won after clearing ${clearedLines} line${clearedLines === 1 ? "" : "s"}.</span>`;
+                        document.getElementById("vs-join-button").innerText = "Rematch";
+                        stop();
+                    } else if (data[0] === 255) {
+                        vsPlayers = data.slice(2);
+                        yourIndex = data[1];
+
+                        document.getElementById("vs-player-1").innerText = vsPlayers[yourIndex];
+                        document.getElementById("vs-player-2").innerText = vsPlayers.length >= 2 ? vsPlayers[yourIndex === 1 ? 0 : 1] : "...";
+                    }
+                });
+
+                console.log("Connected to server!");
+                const path = window.location.protocol + "//" + window.location.host + window.location.pathname + "?join=" + roomCode;
+                window.history.pushState({ path: path }, '', path);
+
+                document.getElementById("vs-container").style.display = "inline-block";
+                document.getElementById("vs-text-container").style.display = "block";
+                document.getElementById("sp-text-container").style.display = "none";
+
+                serverCon.send([ 255, username ]);
+            });
+        });
+    }
+
+    function clearVs() {
+        rematches = [];
+        vsPlayers = [];
+        yourIndex = -1;
+        clients = [];
+        serverCon?.close();
+        serverCon = undefined;
+        document.getElementById("vs-container").style.display = "none";
+        document.getElementById("vs-text-container").style.display = "none";
+        document.getElementById("sp-text-container").style.display = "block";
     }
 </script>
 </body>
