@@ -201,14 +201,15 @@
 
 <script>
     class Piece {
-        constructor(array, width) {
+        constructor(array, width, rotation = 0) {
             this.array = array;
             this.width = width;
             this.height = array.length / width;
+            this.rotation = rotation;
         }
     }
 
-    const VERSION = "v1.2.4";
+    const VERSION = "v1.2.4a";
     document.getElementById("game-info").innerHTML = VERSION + "<br>" + document.getElementById("game-info").innerHTML;
 
     // Yes, I'm aware these are in fact not toasts, please send further complaints to thisisnotatoast@bleach.dev
@@ -757,6 +758,7 @@
                 for (let x = 0; x <= c.maxX - c.minX; x++) {
                     for (let y = 0; y <= c.maxY - c.minY; y++) {
                         if (buffer[(c.minY + y) * width + c.minX + x]) {
+                            console.log(x, y, newX - (c.maxY - c.minY) + (reverse ? y : (c.maxY - c.minY) - y) + rx, newY + (reverse ? (c.maxX - c.minX) - x : x) + ry, c);
                             fallingBoards[0][(newY + (reverse ? (c.maxX - c.minX) - x : x) + ry) * width + newX - (c.maxY - c.minY) + (reverse ? y : (c.maxY - c.minY) - y) + rx] = buffer[(c.minY + y) * width + c.minX + x];
                         }
                     }
@@ -776,8 +778,9 @@
         }
 
         const c = cropBoard(fallingBoards[0]);
+        c.piece.rotation = rotation;
 
-        putPieceInGrid("holding", c.piece)
+        putPieceInGrid("holding", c.piece);
 
         // Swap or summon new piece on the board
         fallingBoards[0].fill(0);
@@ -785,6 +788,8 @@
             for (let i = 0; i < holdingPiece.array.length; i++) {
                 fallingBoards[0][Math.floor(i / holdingPiece.width) * width + (i % holdingPiece.width) + 4] = holdingPiece.array[i];
             }
+
+            rotation = holdingPiece.rotation;
         } else {
             summonPiece();
         }
