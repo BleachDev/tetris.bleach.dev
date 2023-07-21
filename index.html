@@ -209,7 +209,7 @@
         }
     }
 
-    const VERSION = "v1.2.6";
+    const VERSION = "v1.2.7";
     document.getElementById("game-info").innerHTML = VERSION + "<br>" + document.getElementById("game-info").innerHTML;
 
     // Yes, I'm aware these are in fact not toasts, please send further complaints to thisisnotatoast@bleach.dev
@@ -738,8 +738,8 @@
 
     function rotateFalling(reverse) {
         const c = cropBoard(fallingBoards[0]);
-        const newX = c.centerX + (c.centerY - c.minY);
-        const newY = c.centerY - (c.centerX - c.minX);
+        const newX = reverse ? c.centerX - (c.centerY - c.minY) : c.centerX + (c.centerY - c.minY);
+        const newY = reverse ? c.centerY + (c.centerX - c.minX) : c.centerY - (c.centerX - c.minX);
 
         const srsIndex = reverse ? (((rotation - 1) % 4) + 4) % 4 : rotation;
         for (let o of Math.max(c.piece.width, c.piece.height) >= 4 ? SRS_4X1[srsIndex] : SRS_3X2[srsIndex]) {
@@ -749,7 +749,7 @@
             for (let x = 0; x <= c.maxX - c.minX; x++) {
                 for (let y = 0; y <= c.maxY - c.minY; y++) {
                     if (getBoard(fallingBoards[0], c.minX + x, c.minY + y)
-                        && getBoard(boards[0], newX - (c.maxY - c.minY) + (reverse ? y : (c.maxY - c.minY) - y) + rx, newY + (reverse ? (c.maxX - c.minX) - x : x) + ry)) {
+                        && getBoard(boards[0], newX + (reverse ? y : -y) + rx, newY + (reverse ? -x : x) + ry)) {
                         found = false;
                     }
                 }
@@ -761,8 +761,8 @@
                 for (let x = 0; x <= c.maxX - c.minX; x++) {
                     for (let y = 0; y <= c.maxY - c.minY; y++) {
                         if (buffer[(c.minY + y) * width + c.minX + x]) {
-                            console.log(x, y, newX - (c.maxY - c.minY) + (reverse ? y : (c.maxY - c.minY) - y) + rx, newY + (reverse ? (c.maxX - c.minX) - x : x) + ry, c);
-                            fallingBoards[0][(newY + (reverse ? (c.maxX - c.minX) - x : x) + ry) * width + newX - (c.maxY - c.minY) + (reverse ? y : (c.maxY - c.minY) - y) + rx] = buffer[(c.minY + y) * width + c.minX + x];
+                            //console.log(x, y, newX - (c.maxY - c.minY) + (reverse ? y : (c.maxY - c.minY) - y) + rx, newY + (reverse ? (c.maxX - c.minX) - x : x) + ry, c);
+                            fallingBoards[0][(newY + (reverse ? -x : x) + ry) * width + newX + (reverse ? y : -y) + rx] = buffer[(c.minY + y) * width + c.minX + x];
                         }
                     }
                 }
