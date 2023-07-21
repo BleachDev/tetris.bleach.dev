@@ -104,7 +104,7 @@
 
 <div class="bottom-right">
     <p class="corner-text">
-        v1.2.2<br>
+        v1.2.3<br>
         A&nbsp;<a href="https://bleach.dev" class="bleach-link">bleach.dev</a>&nbsp;Game
     </p>
 </div>
@@ -214,6 +214,19 @@
     const USERNAMES = [ "username", "vs-username" ];
     const SYNTH = new Tone.FMSynth().toDestination();
 
+    const SRS_3X2 = [
+        [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]],
+        [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]],
+        [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],
+        [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],
+    ];
+    const SRS_4X1 = [
+        [[0, 0], [-2, 0], [1, 0], [-2, 1], [1, -2]],
+        [[0, 0], [-1, 0], [2, 0], [-1, -2], [2, 1]],
+        [[0, 0], [2, 0], [-1, 0], [2, -1], [-1, 2]],
+        [[0, 0], [1, 0], [-2, 0], [1, 2], [-2, -1]],
+    ];
+
     const DEFAULT_COLORS = ["#3bb88a", "#6f5fc0", "#c06f3e", "#c5ad44", "#bb3e44", "#af4ba6", "#86b43a"];
     const PIECES = [
         new Piece([1, 1, 1, 1], 4), // I
@@ -304,6 +317,7 @@
 
     let canHold = true;
     let holdingPiece;
+    let rotation = 0;
     let clearedLines = 0;
     let gracePeriod = 0;
     let buh = 0; // How much buh garbage you have
@@ -388,7 +402,7 @@
             }
         }
 
-        const tickRate = Math.max(65, 450 - (buh * 9));
+        const tickRate = Math.max(65, 4500 - (buh * 9));
         if (ticker % tickRate < lastTick % tickRate) {
             tick();
         }
@@ -497,6 +511,7 @@
 
         lastTime = performance.now();
         timer = 0;
+        rotation = 0;
         clearedLines = 0;
         buh = 0;
         tempBuh = 0;
@@ -581,7 +596,7 @@
                             document.getElementById("play-button").onclick = resume;
 
                             stop();
-                            fetch(`https://api.bleach.dev/tetris/submittime?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2.2`, {
+                            fetch(`https://api.bleach.dev/tetris/submittime?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2.3`, {
                                 method: 'POST',
                                 body: moves
                             }).then(r => r.ok);
@@ -698,8 +713,12 @@
             }
         }
 
-        const centerX = Math.round((minX + maxX) / 2);
-        const centerY = Math.round((minY + maxY) / 2);
+        const centerX = piece.width === 2 && piece.height === 2 ? (minX + maxX) / 2
+            : piece.width * piece.height === 4 ? (rotation === 1 ? minX - 0.5 : rotation === 3 ? maxX + 0.5 : ((minX + maxX) / 2))
+            : rotation === 0 || rotation === 3 ? Math.ceil((minX + maxX) / 2) : Math.floor((minX + maxX) / 2);
+        const centerY = piece.width === 2 && piece.height === 2 ? (minY + maxY) / 2
+            : piece.width * piece.height === 4 ? (rotation === 0 ? maxY + 0.5 : rotation === 2 ? minY - 0.5 : ((minY + maxY) / 2))
+            : rotation <= 1 ? Math.ceil((minY + maxY) / 2) : Math.floor((minY + maxY) / 2);
         return {
             "piece": piece,
             "minX": minX,
@@ -713,14 +732,18 @@
 
     function rotateFalling(reverse) {
         const c = cropBoard(fallingBoards[0]);
-        const newX = c.centerX - (c.centerY - c.minY);
+        const newX = c.centerX + (c.centerY - c.minY);
         const newY = c.centerY - (c.centerX - c.minX);
 
-        for (let o of reverse ? [[0, 0], [1, 0], [1, -1], [0, -2], [1, 2], [-1, 0], [-2, 0]] : [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2], [1, 0], [2, 0]]) {
+        const srsIndex = reverse ? (((rotation - 1) % 4) + 4) % 4 : rotation;
+        for (let o of Math.max(c.piece.width, c.piece.height) >= 4 ? SRS_4X1[srsIndex] : SRS_3X2[srsIndex]) {
+            const rx = (reverse ? -o[0] : o[0]);
+            const ry = (reverse ? -o[1] : o[1]);
             let found = true;
             for (let x = 0; x <= c.maxX - c.minX; x++) {
                 for (let y = 0; y <= c.maxY - c.minY; y++) {
-                    if (getBoard(fallingBoards[0], c.minX + x, c.minY + y) && getBoard(boards[0], newX + (c.maxY - c.minY) - y + o[0], newY + x + o[1])) {
+                    if (getBoard(fallingBoards[0], c.minX + x, c.minY + y)
+                        && getBoard(boards[0], newX - (c.maxY - c.minY) + (reverse ? y : (c.maxY - c.minY) - y) + rx, newY + (reverse ? (c.maxX - c.minX) - x : x) + ry)) {
                         found = false;
                     }
                 }
@@ -732,11 +755,12 @@
                 for (let x = 0; x <= c.maxX - c.minX; x++) {
                     for (let y = 0; y <= c.maxY - c.minY; y++) {
                         if (buffer[(c.minY + y) * width + c.minX + x]) {
-                            fallingBoards[0][(newY + (reverse ? (c.maxX - c.minX) - x : x) + o[1]) * width + newX + (reverse ? y : (c.maxY - c.minY) - y) + o[0]] = buffer[(c.minY + y) * width + c.minX + x];
+                            fallingBoards[0][(newY + (reverse ? (c.maxX - c.minX) - x : x) + ry) * width + newX - (c.maxY - c.minY) + (reverse ? y : (c.maxY - c.minY) - y) + rx] = buffer[(c.minY + y) * width + c.minX + x];
                         }
                     }
                 }
 
+                rotation = (((rotation + (reverse ? -1 : 1)) % 4) + 4) % 4;
                 render();
                 return;
             }
@@ -812,7 +836,7 @@
                     document.getElementById("play-button").innerText = "Restart";
                     document.getElementById("play-button").onclick = start;
 
-                    fetch(`https://api.bleach.dev/tetris/submitlines?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2.2`, {
+                    fetch(`https://api.bleach.dev/tetris/submitlines?id=${gameId}&name=${getAndSaveUsername("username")}&lines=${clearedLines}&time=${timer}&version=v1.2.3`, {
                         method: 'POST',
                         body: moves
                     }).then(r => r.ok);
@@ -825,6 +849,7 @@
             fallingBoards[0][boardPos] = nextPiece.array[i];
         }
 
+        rotation = 0;
         tempBuh = tempBuh - counterLines * 15;
         if (tempBuh > 5) {
             let piece = ~~(Math.random() * Math.min(3 + tempBuh, BUH_PIECES.length));
@@ -837,6 +862,7 @@
 
         if (serverCon)
             document.getElementById("vs-player-1").innerText = `${vsPlayers[yourIndex]} (Buh: ${buh}+${tempBuh})`;
+
         updateNextPieces();
     }
 
@@ -1020,7 +1046,7 @@
                             document.getElementById("vs-join-button").innerText = "Rematch";
                         }
                         if (yourIndex <= 1) {
-                            fetch(`https://api.bleach.dev/tetris/submitvs?name=${vsPlayers[data[2] ? 0 : 1]}&code=${roomCode}&version=v1.2.2`, {method: 'POST'}).then(r => r.ok);
+                            fetch(`https://api.bleach.dev/tetris/submitvs?name=${vsPlayers[data[2] ? 0 : 1]}&code=${roomCode}&version=v1.2.3`, {method: 'POST'}).then(r => r.ok);
                         }
 
                         stop();
