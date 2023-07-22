@@ -209,7 +209,7 @@
         }
     }
 
-    const VERSION = "v1.2.7";
+    const VERSION = "v1.2.8";
     document.getElementById("game-info").innerHTML = VERSION + "<br>" + document.getElementById("game-info").innerHTML;
 
     // Yes, I'm aware these are in fact not toasts, please send further complaints to thisisnotatoast@bleach.dev
@@ -408,7 +408,7 @@
             }
         }
 
-        const tickRate = Math.max(80, 550 - (buh * 11));
+        const tickRate = Math.max(90, 570 - (buh * 10.8));
         if (ticker % tickRate < lastTick % tickRate) {
             tick();
         }
@@ -419,6 +419,13 @@
     };
 
     // Init
+    for (let e of document.getElementsByTagName("button")) {
+        e.addEventListener("click", () => {
+            Tone.start();
+            SYNTH.triggerAttackRelease("G3", "128n", Tone.now(), 0.25);
+        });
+    }
+
     document.addEventListener("keydown", e => {
         if (e.key === "Escape") {
             closeToast("leaderboard-toast");
@@ -512,7 +519,6 @@
     }
 
     function start() {
-        Tone.start();
         TOASTS.forEach(t => t.style.display = "none");
 
         lastTime = performance.now();
