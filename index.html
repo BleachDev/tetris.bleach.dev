@@ -535,10 +535,10 @@
         initGrid("holding", 1, 1);
         document.getElementById("holding").innerHTML =`<div class="grid-cell"></div>`;
 
+        gameId = Math.floor(Date.now() / 1000);
+        pieceRandom = mulberry32(gameId);
+        moves = "";
         if (!serverCon) {
-            gameId = Math.floor(Date.now() / 1000);
-            pieceRandom = mulberry32(gameId);
-            moves = "";
             fetch("https://api.bleach.dev/tetris/startgame?id=" + gameId);
         }
 
