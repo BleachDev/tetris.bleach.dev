@@ -37,7 +37,7 @@
 #tetris, #vs-tetris {
     width: 350px;
     height: 770px;
-    transition-duration: 0.06s;
+    transition-duration: 0.07s;
 }
 
 #vs-container {
