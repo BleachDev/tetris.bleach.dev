@@ -34,19 +34,15 @@
     height: 22px;
 }
 
-#tetris {
+#tetris, #vs-tetris {
     width: 350px;
     height: 770px;
+    transition-duration: 0.06s;
 }
 
 #vs-container {
     display: none/*inline-block*/;
     margin-left: 120px;
-}
-
-#vs-tetris {
-    width: 350px;
-    height: 770px;
 }
 
 #vs-text-container {
