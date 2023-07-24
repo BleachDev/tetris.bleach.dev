@@ -209,7 +209,7 @@
         }
     }
 
-    const VERSION = "v1.2.8";
+    const VERSION = "v1.2.9";
     document.getElementById("game-info").innerHTML = VERSION + "<br>" + document.getElementById("game-info").innerHTML;
 
     // Yes, I'm aware these are in fact not toasts, please send further complaints to thisisnotatoast@bleach.dev
@@ -1067,7 +1067,7 @@
                         document.getElementById("vs-player-1").innerText = `${vsPlayers[yourIndex]} (Buh: ${buh}+${tempBuh})`;
 
                         document.getElementById("tetris").style.borderBottom = "3px solid #b03434";
-                        setTimeout(() => document.getElementById("tetris").style.borderBottom = "0px solid #b03434", 400);
+                        setTimeout(() => document.getElementById("tetris").style.borderBottom = "0px solid #b03434", 450);
                     } else if (data[0] === 252) {
                         document.getElementById("vs-join-text-2").innerHTML = data[1];
                         document.getElementById("vs-username-container").style.display = "none";
@@ -1098,7 +1098,7 @@
                         vsPlayers = data.slice(2);
                         yourIndex = data[1];
 
-                        document.getElementById("vs-player-1").innerText = vsPlayers[yourIndex];
+                        document.getElementById("vs-player-1").innerText = vsPlayers[yourIndex === 1 ? 1 : 0];
                         document.getElementById("vs-player-2").innerText = vsPlayers.length >= 2 ? vsPlayers[yourIndex === 1 ? 0 : 1] : "...";
                         if (yourIndex >= 2) {
                             closeToast("vs-join-toast");
