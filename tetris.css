@@ -1,3 +1,7 @@
+.grid, .small-grid {
+    backdrop-filter: blur(6px);
+}
+
 .grid {
     display: inline-grid;
     grid-auto-rows: 100%;
