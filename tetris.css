@@ -1,3 +1,8 @@
+h1 {
+    font-size: 42px;
+    margin: 16px 0;
+}
+
 .grid, .small-grid {
     backdrop-filter: blur(6px);
 }
@@ -188,4 +193,28 @@ input {
 .color-link {
     filter: grayscale(1) brightness(70%);
     -webkit-filter: grayscale(1) brightness(70%);
+}
+
+/* Touchscreen UI */
+
+#touch-controls {
+    display: none;
+}
+
+.touch-box {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    font-size: 70px;
+    font-weight: bold;
+    background-color: #101010c0;
+}
+
+.touch-box p {
+    line-height: 0;
+    margin: 35px 0;
+}
+
+body {
+    touch-action: none;
 }
