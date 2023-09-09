@@ -226,7 +226,7 @@
         }
     }
 
-    const VERSION = "v1.3.0";
+    const VERSION = "v1.3.1";
     document.getElementById("game-info").innerHTML = VERSION + "<br>" + document.getElementById("game-info").innerHTML;
 
     // Yes, I'm aware these are in fact not toasts, please send further complaints to thisisnotatoast@bleach.dev
@@ -344,6 +344,7 @@
     let gracePeriod = 0;
     let buh = 0; // How much buh garbage you have
     let tempBuh = 0;
+    let combo = 0;
 
     let timer = 0;
     let lastTime;
@@ -568,6 +569,7 @@
         clearedLines = 0;
         buh = 0;
         tempBuh = 0;
+        combo = 0;
         updateLinesCleared();
         boards.forEach(b => b.fill(0));
         fallingBoards.forEach(b => b.fill(0));
@@ -629,7 +631,7 @@
             fallingBoards[0].fill(0);
 
             // Clear lines
-            let linesClearedHere = 0;
+            const prevCombo = combo;
             for (let line = 0; line < boards[0].length; line += width) {
                 if (boards[0].slice(line, line + width).every(v => v)) {
                     for (let cell = line + width - 1; cell >= 0; cell--) {
@@ -637,9 +639,11 @@
                     }
 
                     clearedLines++;
-                    linesClearedHere++;
+                    combo++;
                     if (serverCon) {
-                        serverCon.send([ 2, 3 + ~~(Math.random() * 13) ]);
+                        const newBuh = 3 + ~~(Math.random() * (8 + combo * 1.5));
+                        serverCon.send([ 2, newBuh ]);
+                        tempBuh = Math.max(0, ~(tempBuh - newBuh * 1.25));
                     } else {
                         buh++;
                     }
@@ -664,7 +668,11 @@
                 }
             }
 
-            summonPiece(linesClearedHere);
+            if (prevCombo === combo) {
+                combo = 0;
+            }
+
+            summonPiece();
             canHold = true;
         } else {
             gracePeriod = 0;
@@ -885,7 +893,7 @@
         }
     }
 
-    function summonPiece(counterLines = 0) {
+    function summonPiece() {
         const nextPiece = nextPieces.shift();
         if (!serverCon)
             moves += "s" + PIECES.indexOf(nextPiece);
@@ -916,18 +924,16 @@
         }
 
         rotation = 0;
-        tempBuh = tempBuh - counterLines * 15;
         if (tempBuh > 5) {
             let piece = ~~(Math.random() * Math.min(3 + tempBuh, BUH_PIECES.length));
             tempBuh = Math.max(tempBuh - piece - 2, 0);
             nextPieces.splice(4, 0, BUH_PIECES[piece]);
         } else {
-            tempBuh = 0;
             nextPieces.splice(4, 0, PIECES[~~(pieceRandom() * Math.min(7 + buh, PIECES.length))]);
         }
 
         if (serverCon)
-            document.getElementById("vs-player-1").innerText = `${vsPlayers[yourIndex]} (Buh: ${buh}+${tempBuh})`;
+            document.getElementById("vs-player-1").innerHTML = `${vsPlayers[yourIndex]} <span style='font-size: 14px'>C: ${combo}, Buh: ${buh}+${tempBuh}</span>`;
 
         updateNextPieces();
     }
