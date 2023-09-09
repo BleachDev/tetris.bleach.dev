@@ -1108,7 +1108,7 @@
                     } else if (data[0] === 2) {
                         buh++;
                         tempBuh += data[1];
-                        document.getElementById("vs-player-1").innerText = `${vsPlayers[yourIndex]} (Buh: ${buh}+${tempBuh})`;
+                        document.getElementById("vs-player-1").innerText = `${vsPlayers[yourIndex]} <span style='font-size: 14px'>C: ${combo}, Buh: ${buh}+${tempBuh}</span>`;
 
                         document.getElementById("tetris").style.borderBottom = "3px solid #b03434";
                         setTimeout(() => document.getElementById("tetris").style.borderBottom = "0px solid #b03434", 450);
