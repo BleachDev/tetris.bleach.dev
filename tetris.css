@@ -207,12 +207,12 @@ input {
     position: absolute;
     width: 70px;
     height: 70px;
-    font-size: 70px;
-    font-weight: bold;
     background-color: #101010c0;
 }
 
 .touch-box p {
+    font-size: 70px;
+    font-weight: bold;
     line-height: 0;
     margin: 35px 0;
 }
