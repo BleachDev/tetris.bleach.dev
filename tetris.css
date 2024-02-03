@@ -1,5 +1,5 @@
 h1 {
-    font-size: 42px;
+    font-size: 40px;
     margin: 16px 0;
 }
 
@@ -104,7 +104,7 @@ h1 {
 }
 
 .menu-button {
-    font-size: 32px;
+    font-size: 27px;
     width: 280px;
 }
 
@@ -161,6 +161,7 @@ input {
 }
 
 .leaderboard-button {
+    font-size: 16px;
     width: 27.5%;
     margin: 4px 0;
 }
