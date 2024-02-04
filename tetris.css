@@ -120,6 +120,7 @@ input {
 
 #vs-code {
     background-color: var(--box-color);
+    font-size: 16px;
     padding: 7px 10px;
     border-radius: 4px;
     margin: 0;
