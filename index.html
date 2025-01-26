@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="https://bleach.dev/static/css/main.css">
     <link rel="stylesheet" href="tetris.css">
 
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
 </head>
 <body>
@@ -226,8 +226,10 @@
         }
     }
 
-    const VERSION = "v1.3.1";
+    const VERSION = "v1.3.2";
     document.getElementById("game-info").innerHTML = VERSION + "<br>" + document.getElementById("game-info").innerHTML;
+
+    let iceServerPromise = fetch("https://api.bleach.dev/turn").then(r => r.json()).catch(_ => null);
 
     // Yes, I'm aware these are in fact not toasts, please send further complaints to thisisnotatoast@bleach.dev
     const TOASTS = [ "menu-toast", "play-toast", "vs-toast", "vs-join-toast", "leaderboard-toast"].map(t => document.getElementById(t));
@@ -501,32 +503,33 @@
         const code = urlParams.get("join");
         openToast("vs-join-toast");
 
-        const metadataPeer = new peerjs.Peer();
-        metadataPeer.on('open', id => {
-            console.log('Client peer ID is: ' + id);
+        createPeer().then(metadataPeer => {
+            metadataPeer.on('open', id => {
+                console.log('Client peer ID is: ' + id);
 
-            const metadataCon = metadataPeer.connect("bl-ttne-" + code);
-            metadataCon.on('open', () => {
-                metadataCon.on('data', data => {
-                    if (data.length >= 4) {
-                        document.getElementById("vs-join-button").innerText = "Spectate";
-                    }
-                    document.getElementById("vs-join-text").innerHTML = data.length >= 4 ?
-                        `<b>${data[2]}</b> vs <b>${data[3]}</b>` : `<b>${data[2]}</b> invited you to tetris gaming!`;
-                    document.getElementById("vs-join-text-2").innerHTML = `Click ${data.length >= 4 ? "Spectate" : "Join"} to start`;
-                    document.getElementById("vs-join-button").disabled = "";
-                    document.getElementById("vs-join-button").onclick = () => {
-                        if (!document.getElementById("vs-username").value) {
-                            document.getElementById("vs-username-label").innerHTML = `<span style="color: #ff8d90">Please choose a username!</span>`
-                        } else {
-                            document.getElementById("vs-join-button").disabled = "disabled";
-                            joinGame(code, getAndSaveUsername("vs-username"));
+                const metadataCon = metadataPeer.connect("bl-ttne-" + code);
+                metadataCon.on('open', () => {
+                    metadataCon.on('data', data => {
+                        if (data.length >= 4) {
+                            document.getElementById("vs-join-button").innerText = "Spectate";
                         }
-                    };
+                        document.getElementById("vs-join-text").innerHTML = data.length >= 4 ?
+                            `<b>${data[2]}</b> vs <b>${data[3]}</b>` : `<b>${data[2]}</b> invited you to tetris gaming!`;
+                        document.getElementById("vs-join-text-2").innerHTML = `Click ${data.length >= 4 ? "Spectate" : "Join"} to start`;
+                        document.getElementById("vs-join-button").disabled = "";
+                        document.getElementById("vs-join-button").onclick = () => {
+                            if (!document.getElementById("vs-username").value) {
+                                document.getElementById("vs-username-label").innerHTML = `<span style="color: #ff8d90">Please choose a username!</span>`
+                            } else {
+                                document.getElementById("vs-join-button").disabled = "disabled";
+                                joinGame(code, getAndSaveUsername("vs-username"));
+                            }
+                        };
 
-                    metadataPeer.destroy();
+                        metadataPeer.destroy();
+                    });
+                    metadataCon.send([ 255 ]);
                 });
-                metadataCon.send([ 255 ]);
             });
         });
     }
@@ -1006,64 +1009,65 @@
         document.getElementById("vs-copy").onclick = () => navigator.clipboard.writeText("https://tetris.bleach.dev/?join=" + roomCode);
         openToast("vs-toast");
 
-        let clientAcceptor = new peerjs.Peer("bl-ttne-" + roomCode);
-        clientAcceptor.on('open', id => {
-            console.log('Server peer ID is: ' + id);
+        createPeer("bl-ttne-" + roomCode).then(clientAcceptor => {
+            clientAcceptor.on('open', id => {
+                console.log('Server peer ID is: ' + id);
 
-            clientAcceptor.on('connection', clientCon => {
-                console.log("Client Accepted", clientCon);
+                clientAcceptor.on('connection', clientCon => {
+                    console.log("Client Accepted", clientCon);
 
-                clientCon.on('data', data => {
-                    if (data[0] !== 0)
-                        console.log("Server Received", data);
+                    clientCon.on('data', data => {
+                        if (data[0] !== 0)
+                            console.log("Server Received", data);
 
-                    let clIndex = clients.indexOf(clientCon);
-                    if (data[0] <= 1) {
-                        for (const cl of clients) {
-                            if (clients.indexOf(cl) !== clIndex) {
-                                cl.send(data);
-                            }
-                        }
-                    } else if (data[0] === 2) {
-                        clients[clIndex ? 0 : 1].send(data);
-                    } else if (data[0] === 253) {
-                        if (!rematches.includes(clIndex)) {
-                            rematches.push(clIndex)
+                        let clIndex = clients.indexOf(clientCon);
+                        if (data[0] <= 1) {
                             for (const cl of clients) {
-                                cl.send([252, `${rematches.map(i => vsPlayers[i]).join(", ")} Wants a rematch!`]);
+                                if (clients.indexOf(cl) !== clIndex) {
+                                    cl.send(data);
+                                }
+                            }
+                        } else if (data[0] === 2) {
+                            clients[clIndex ? 0 : 1].send(data);
+                        } else if (data[0] === 253) {
+                            if (!rematches.includes(clIndex)) {
+                                rematches.push(clIndex)
+                                for (const cl of clients) {
+                                    cl.send([252, `${rematches.map(i => vsPlayers[i]).join(", ")} Wants a rematch!`]);
+                                }
+
+                                if (rematches.includes(0) && rematches.includes(1)) {
+                                    startCountdown();
+                                }
+                            }
+                        } else if (data[0] === 254) {
+                            for (const cl of clients) {
+                                cl.send(data);
+                                cl.send([ 253 ]);
+                            }
+                        } else if (data[0] === 255) {
+                            if (data.length >= 2 && clIndex === -1) {
+                                console.log("Client Added To Game", clientCon);
+                                clIndex = clients.push(clientCon) - 1;
+                                vsPlayers.push(data[1]);
+
+                                for (let i = 0; i < clients.length - 1; i++) {
+                                    clients[i].send([ 255, i ].concat(vsPlayers));
+                                }
+
+                                if (vsPlayers.length === 2) {
+                                    document.getElementById("vs-join-button").disabled = "disabled";
+                                    startCountdown();
+                                }
                             }
 
-                            if (rematches.includes(0) && rematches.includes(1)) {
-                                startCountdown();
-                            }
+                            clientCon.send([ 255, clIndex ].concat(vsPlayers));
                         }
-                    } else if (data[0] === 254) {
-                        for (const cl of clients) {
-                            cl.send(data);
-                            cl.send([ 253 ]);
-                        }
-                    } else if (data[0] === 255) {
-                        if (data.length >= 2 && clIndex === -1) {
-                            console.log("Client Added To Game", clientCon);
-                            clIndex = clients.push(clientCon) - 1;
-                            vsPlayers.push(data[1]);
-
-                            for (let i = 0; i < clients.length - 1; i++) {
-                                clients[i].send([ 255, i ].concat(vsPlayers));
-                            }
-
-                            if (vsPlayers.length === 2) {
-                                document.getElementById("vs-join-button").disabled = "disabled";
-                                startCountdown();
-                            }
-                        }
-
-                        clientCon.send([ 255, clIndex ].concat(vsPlayers));
-                    }
+                    });
                 });
             });
+            console.log(clientAcceptor);
         });
-        console.log(clientAcceptor);
 
         joinGame(roomCode, username);
     }
@@ -1087,82 +1091,83 @@
     }
 
     function joinGame(roomCode, username) {
-        const toServerPeer = new peerjs.Peer();
-        toServerPeer.on('open', id => {
-            console.log('Client peer ID is: ' + id);
+        createPeer().then(toServerPeer => {
+            toServerPeer.on('open', id => {
+                console.log('Client peer ID is: ' + id);
 
-            serverCon = toServerPeer.connect("bl-ttne-" + roomCode);
-            serverCon.on('open', () => {
-                serverCon.on('data', data => {
-                    if (data[0] !== 0)
-                        console.log("Client Received", data);
+                serverCon = toServerPeer.connect("bl-ttne-" + roomCode);
+                serverCon.on('open', () => {
+                    serverCon.on('data', data => {
+                        if (data[0] !== 0)
+                            console.log("Client Received", data);
 
-                    if (data[0] <= 1) {
-                        boards[playerToBoard(data[0])] = data[1];
-                        fallingBoards[playerToBoard(data[0])] = data[2];
-                        for (let i = 0; i < 5; i++)
-                            nextPieces[playerToBoard(data[0]) * 5 + i] = data[3 + i];
+                        if (data[0] <= 1) {
+                            boards[playerToBoard(data[0])] = data[1];
+                            fallingBoards[playerToBoard(data[0])] = data[2];
+                            for (let i = 0; i < 5; i++)
+                                nextPieces[playerToBoard(data[0]) * 5 + i] = data[3 + i];
 
-                        updateNextPieces();
-                        render();
-                    } else if (data[0] === 2) {
-                        buh++;
-                        tempBuh += data[1];
-                        document.getElementById("vs-player-1").innerHTML = `${vsPlayers[yourIndex]} <span style='font-size: 14px'>C: ${combo}, Buh: ${buh}+${tempBuh}</span>`;
+                            updateNextPieces();
+                            render();
+                        } else if (data[0] === 2) {
+                            buh++;
+                            tempBuh += data[1];
+                            document.getElementById("vs-player-1").innerHTML = `${vsPlayers[yourIndex]} <span style='font-size: 14px'>C: ${combo}, Buh: ${buh}+${tempBuh}</span>`;
 
-                        document.getElementById("tetris").style.borderBottom = "3px solid #b03434";
-                        setTimeout(() => document.getElementById("tetris").style.borderBottom = "0px solid #b03434", 450);
-                    } else if (data[0] === 252) {
-                        document.getElementById("vs-join-text-2").innerHTML = data[1];
-                        document.getElementById("vs-username-container").style.display = "none";
-                        SYNTH.triggerAttackRelease("A4", "128n", Tone.now(), 0.3);
-                        stop();
-                    } else if (data[0] === 253) {
-                        if (data.length >= 2) {
-                            rematches = [];
-                            start();
-                        } else {
-                            document.getElementById("vs-join-button").disabled = "";
-                            document.getElementById("vs-join-button").onclick = () => {
-                                serverCon.send([ 253 ]);
-                                document.getElementById("vs-join-button").disabled = "disabled";
+                            document.getElementById("tetris").style.borderBottom = "3px solid #b03434";
+                            setTimeout(() => document.getElementById("tetris").style.borderBottom = "0px solid #b03434", 450);
+                        } else if (data[0] === 252) {
+                            document.getElementById("vs-join-text-2").innerHTML = data[1];
+                            document.getElementById("vs-username-container").style.display = "none";
+                            SYNTH.triggerAttackRelease("A4", "128n", Tone.now(), 0.3);
+                            stop();
+                        } else if (data[0] === 253) {
+                            if (data.length >= 2) {
+                                rematches = [];
+                                start();
+                            } else {
+                                document.getElementById("vs-join-button").disabled = "";
+                                document.getElementById("vs-join-button").onclick = () => {
+                                    serverCon.send([ 253 ]);
+                                    document.getElementById("vs-join-button").disabled = "disabled";
+                                }
+                            }
+                        } else if (data[0] === 254) {
+                            if (data[2] !== yourIndex) {
+                                document.getElementById("vs-join-text").innerHTML = `<span style="color: #9cff8d;">You Won after clearing ${clearedLines} line${clearedLines === 1 ? "" : "s"}.</span>`;
+                                document.getElementById("vs-join-button").innerText = "Rematch";
+                            }
+                            if (yourIndex <= 1) {
+                                fetch(`https://api.bleach.dev/tetris/submitvs?name=${vsPlayers[data[2] ? 0 : 1]}&code=${roomCode}&version=${VERSION}`, {method: 'POST'}).then(r => r.ok);
+                            }
+
+                            stop();
+                        } else if (data[0] === 255) {
+                            vsPlayers = data.slice(2);
+                            yourIndex = data[1];
+
+                            document.getElementById("vs-player-1").innerText = vsPlayers[yourIndex === 1 ? 1 : 0];
+                            document.getElementById("vs-player-2").innerText = vsPlayers.length >= 2 ? vsPlayers[yourIndex === 1 ? 0 : 1] : "...";
+                            if (yourIndex >= 2) {
+                                closeToast("vs-join-toast");
+                            }
+
+                            if (data.length >= 5) {
+                                document.getElementById("spectators").innerText = "👁 " + data.slice(4).join(", ");
                             }
                         }
-                    } else if (data[0] === 254) {
-                        if (data[2] !== yourIndex) {
-                            document.getElementById("vs-join-text").innerHTML = `<span style="color: #9cff8d;">You Won after clearing ${clearedLines} line${clearedLines === 1 ? "" : "s"}.</span>`;
-                            document.getElementById("vs-join-button").innerText = "Rematch";
-                        }
-                        if (yourIndex <= 1) {
-                            fetch(`https://api.bleach.dev/tetris/submitvs?name=${vsPlayers[data[2] ? 0 : 1]}&code=${roomCode}&version=${VERSION}`, {method: 'POST'}).then(r => r.ok);
-                        }
+                    });
 
-                        stop();
-                    } else if (data[0] === 255) {
-                        vsPlayers = data.slice(2);
-                        yourIndex = data[1];
+                    console.log("Connected to server!");
+                    const path = window.location.protocol + "//" + window.location.host + window.location.pathname + "?join=" + roomCode;
+                    window.history.pushState({ path: path }, '', path);
 
-                        document.getElementById("vs-player-1").innerText = vsPlayers[yourIndex === 1 ? 1 : 0];
-                        document.getElementById("vs-player-2").innerText = vsPlayers.length >= 2 ? vsPlayers[yourIndex === 1 ? 0 : 1] : "...";
-                        if (yourIndex >= 2) {
-                            closeToast("vs-join-toast");
-                        }
+                    document.getElementById("vs-container").style.display = "inline-block";
+                    document.getElementById("vs-text-container").style.display = "block";
+                    document.getElementById("sp-text-container").style.display = "none";
 
-                        if (data.length >= 5) {
-                            document.getElementById("spectators").innerText = "👁 " + data.slice(4).join(", ");
-                        }
-                    }
+                    serverCon.send([ 255, username ]);
                 });
-
-                console.log("Connected to server!");
-                const path = window.location.protocol + "//" + window.location.host + window.location.pathname + "?join=" + roomCode;
-                window.history.pushState({ path: path }, '', path);
-
-                document.getElementById("vs-container").style.display = "inline-block";
-                document.getElementById("vs-text-container").style.display = "block";
-                document.getElementById("sp-text-container").style.display = "none";
-
-                serverCon.send([ 255, username ]);
             });
         });
     }
@@ -1178,6 +1183,11 @@
         document.getElementById("vs-text-container").style.display = "none";
         document.getElementById("sp-text-container").style.display = "block";
         document.getElementById("spectators").innerText = "";
+    }
+
+    async function createPeer(id) {
+        const iceServer = await iceServerPromise;
+        return new peerjs.Peer(id, iceServer ? { config: { iceServers: iceServer } } : null);
     }
 </script>
 </body>
